@@ -12,26 +12,35 @@
 ## Technical Context
 
 <!--
-  ACTION REQUIRED: Replace the content in this section with the technical details
-  for the project. The structure here is presented in advisory capacity to guide
-  the iteration process.
+  ChainBooks uses a standardized Next.js tech stack per the constitution.
+  Override only if feature requires deviations (must be justified).
 -->
 
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
-**Project Type**: [single/web/mobile - determines source structure]  
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+**Language/Version**: TypeScript 5.x (strict mode)
+**Framework**: Next.js 14.x (App Router)
+**Primary Dependencies**: React 18, Zustand, React Query (TanStack Query), Tailwind CSS
+**Storage**: [e.g., PostgreSQL, Prisma ORM, or N/A - NEEDS CLARIFICATION if applicable]
+**Testing**: Vitest (unit/component), Playwright (E2E)
+**Target Platform**: Web (modern browsers)
+**Project Type**: Next.js App Router (monolithic frontend with API routes)
+**Performance Goals**: [domain-specific, e.g., LCP < 2.5s, TTI < 3s, or NEEDS CLARIFICATION]
+**Constraints**: [domain-specific, e.g., SSR required, offline-capable, or NEEDS CLARIFICATION]
+**Scale/Scope**: [domain-specific, e.g., 10k users, 50 screens, or NEEDS CLARIFICATION]
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
-[Gates determined based on constitution file]
+| Principle                 | Requirement                                         | Status |
+| ------------------------- | --------------------------------------------------- | ------ |
+| I. Modular Architecture   | Feature is self-contained with explicit boundaries  | ☐ Pass |
+| II. Loose Coupling        | No cross-feature imports; uses contracts/interfaces | ☐ Pass |
+| III. TypeScript Strict    | All code compiles under strict mode                 | ☐ Pass |
+| IV. Component Composition | UI follows presentational/container split           | ☐ Pass |
+| V. Test-First             | Test strategy defined before implementation         | ☐ Pass |
+| VI. Simplicity & YAGNI    | No premature abstractions; complexity justified     | ☐ Pass |
+
+**Violations requiring justification**: [List any violations with rationale in Complexity Tracking section]
 
 ## Project Structure
 
@@ -48,6 +57,7 @@ specs/[###-feature]/
 ```
 
 ### Source Code (repository root)
+
 <!--
   ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
   for this feature. Delete unused options and expand the chosen structure with
@@ -56,39 +66,37 @@ specs/[###-feature]/
 -->
 
 ```text
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
+# Next.js App Router Structure (DEFAULT for ChainBooks)
 src/
-├── models/
-├── services/
-├── cli/
-└── lib/
+├── app/                    # Next.js App Router pages & layouts
+│   ├── (auth)/             # Route groups for auth pages
+│   ├── (dashboard)/        # Route groups for dashboard
+│   ├── api/                # API routes
+│   ├── layout.tsx          # Root layout
+│   └── page.tsx            # Home page
+├── features/               # Feature modules (self-contained)
+│   └── [feature]/
+│       ├── components/     # Feature-specific components
+│       ├── hooks/          # Feature-specific hooks
+│       ├── services/       # Feature-specific business logic
+│       ├── types.ts        # Feature-specific types
+│       └── index.ts        # Public API of the feature
+├── lib/                    # Shared utilities & services
+│   ├── api/                # API client layer
+│   ├── hooks/              # Shared hooks
+│   └── utils/              # Pure utility functions
+├── components/             # Shared UI components (design system)
+│   ├── atoms/              # Basic building blocks (Button, Input)
+│   ├── molecules/          # Composed components (FormField, Card)
+│   └── organisms/          # Complex components (Header, Sidebar)
+├── types/                  # Shared type definitions
+└── config/                 # App configuration
 
-tests/
-├── contract/
-├── integration/
-└── unit/
-
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
-backend/
-├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
-└── tests/
-
-frontend/
-├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
-
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
-
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
+# Tests (colocated + root level)
+├── __tests__/              # E2E and integration tests
+│   ├── e2e/
+│   └── integration/
+└── [Feature tests colocated with source files as *.test.tsx]
 ```
 
 **Structure Decision**: [Document the selected structure and reference the real
@@ -98,7 +106,7 @@ directories captured above]
 
 > **Fill ONLY if Constitution Check has violations that must be justified**
 
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+| Violation                  | Why Needed         | Simpler Alternative Rejected Because |
+| -------------------------- | ------------------ | ------------------------------------ |
+| [e.g., 4th project]        | [current need]     | [why 3 projects insufficient]        |
+| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient]  |
