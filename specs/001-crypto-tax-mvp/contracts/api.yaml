@@ -1,0 +1,383 @@
+openapi: 3.0.3
+info:
+  title: Chainbooks API
+  description: |
+    Internal API contracts for the Chainbooks Crypto Tax & Analysis MVP.
+
+    This API primarily uses Next.js Server Actions, but this OpenAPI spec
+    documents the data contracts for each action.
+  version: 1.0.0
+  contact:
+    name: Chainbooks Team
+
+servers:
+  - url: http://localhost:3000
+    description: Local development
+
+tags:
+  - name: Wallet
+    description: Wallet management operations
+  - name: Sync
+    description: Transaction sync operations (Council of Agents)
+  - name: Export
+    description: Data export operations
+
+paths:
+  /api/wallet/sync:
+    post:
+      summary: Sync wallet transactions
+      description: |
+        Triggers the full "Council of Agents" pipeline:
+        1. The Auditor - Fetches transactions from Quicknode
+        2. The Appraiser - Prices tokens via CoinGecko
+        3. The Accountant - Classifies transactions via AI
+      tags:
+        - Sync
+      operationId: syncWallet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SyncWalletRequest"
+      responses:
+        "200":
+          description: Sync completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncWalletResponse"
+        "400":
+          description: Invalid wallet address
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error during sync
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/wallet/{walletId}/transactions:
+    get:
+      summary: Get wallet transactions
+      description: Retrieve all transactions for a wallet
+      tags:
+        - Wallet
+      operationId: getWalletTransactions
+      parameters:
+        - name: walletId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: includeSpam
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Include spam-flagged transactions
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [income, swap, expense, transfer, uncategorized]
+          description: Filter by transaction type
+      responses:
+        "200":
+          description: List of transactions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionListResponse"
+        "404":
+          description: Wallet not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/export/csv:
+    post:
+      summary: Export transactions to CSV
+      description: Generate and download a CSV file of transactions
+      tags:
+        - Export
+      operationId: exportCsv
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExportRequest"
+      responses:
+        "200":
+          description: CSV file
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    # =========================================================================
+    # REQUEST SCHEMAS
+    # =========================================================================
+
+    SyncWalletRequest:
+      type: object
+      required:
+        - address
+      properties:
+        address:
+          type: string
+          pattern: "^0x[a-fA-F0-9]{40}$"
+          description: Ethereum wallet address
+          example: "0x742d35Cc6634C0532925a3b844Bc9e7595f1dE21"
+
+    ExportRequest:
+      type: object
+      required:
+        - walletId
+      properties:
+        walletId:
+          type: string
+          format: uuid
+          description: Wallet ID to export transactions for
+        includeSpam:
+          type: boolean
+          default: false
+          description: Include spam transactions in export
+        format:
+          type: string
+          enum: [csv, xlsx]
+          default: csv
+          description: Export file format
+
+    # =========================================================================
+    # RESPONSE SCHEMAS
+    # =========================================================================
+
+    SyncWalletResponse:
+      type: object
+      required:
+        - success
+        - walletId
+        - stats
+      properties:
+        success:
+          type: boolean
+        walletId:
+          type: string
+          format: uuid
+        stats:
+          $ref: "#/components/schemas/SyncStats"
+
+    SyncStats:
+      type: object
+      properties:
+        transactionsFetched:
+          type: integer
+          description: Number of transactions fetched from blockchain
+        transactionsPriced:
+          type: integer
+          description: Number of transactions with USD prices
+        transactionsCategorized:
+          type: integer
+          description: Number of transactions classified by AI
+        spamDetected:
+          type: integer
+          description: Number of spam transactions flagged
+        priceCacheHits:
+          type: integer
+          description: Number of price lookups served from cache
+        duration:
+          type: number
+          format: float
+          description: Total sync duration in seconds
+
+    TransactionListResponse:
+      type: object
+      required:
+        - transactions
+        - total
+      properties:
+        transactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Transaction"
+        total:
+          type: integer
+          description: Total number of transactions
+
+    Transaction:
+      type: object
+      required:
+        - id
+        - hash
+        - blockTimestamp
+        - type
+        - tokenSymbol
+        - amount
+        - isSpam
+      properties:
+        id:
+          type: string
+          format: uuid
+        hash:
+          type: string
+          pattern: "^0x[a-fA-F0-9]{64}$"
+          description: Transaction hash
+        blockTimestamp:
+          type: string
+          format: date-time
+          description: When transaction was mined
+        type:
+          type: string
+          enum: [income, swap, expense, transfer, uncategorized]
+          description: Transaction classification
+        description:
+          type: string
+          nullable: true
+          description: AI-generated human-readable description
+          example: "Uniswap Trade: USDC to ETH"
+        tokenSymbol:
+          type: string
+          description: Token symbol
+          example: "ETH"
+        tokenAddress:
+          type: string
+          nullable: true
+          pattern: "^0x[a-fA-F0-9]{40}$"
+          description: Token contract address (null for native ETH)
+        amount:
+          type: number
+          format: double
+          description: Token amount
+        usdPriceAtTime:
+          type: number
+          format: double
+          nullable: true
+          description: USD price at transaction time
+        totalUsdValue:
+          type: number
+          format: double
+          nullable: true
+          description: Total USD value (amount × price)
+        isSpam:
+          type: boolean
+          description: Whether transaction is flagged as spam
+
+    Wallet:
+      type: object
+      required:
+        - id
+        - address
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        address:
+          type: string
+          pattern: "^0x[a-fA-F0-9]{40}$"
+        createdAt:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error code
+          example: "INVALID_ADDRESS"
+        message:
+          type: string
+          description: Human-readable error message
+          example: "Invalid Ethereum wallet address format"
+        details:
+          type: object
+          additionalProperties: true
+          description: Additional error details
+
+    # =========================================================================
+    # SERVER ACTION CONTRACTS
+    # =========================================================================
+
+    AuditWalletInput:
+      type: object
+      description: Input for auditWallet Server Action
+      required:
+        - address
+      properties:
+        address:
+          type: string
+          pattern: "^0x[a-fA-F0-9]{40}$"
+
+    AuditWalletOutput:
+      type: object
+      description: Output from auditWallet Server Action
+      properties:
+        walletId:
+          type: string
+          format: uuid
+        transactionCount:
+          type: integer
+        isNewWallet:
+          type: boolean
+
+    AppraiseTransactionsInput:
+      type: object
+      description: Input for appraiseTransactions Server Action
+      required:
+        - walletId
+      properties:
+        walletId:
+          type: string
+          format: uuid
+
+    AppraiseTransactionsOutput:
+      type: object
+      description: Output from appraiseTransactions Server Action
+      properties:
+        pricedCount:
+          type: integer
+        skippedCount:
+          type: integer
+          description: Transactions skipped (no price available)
+        cacheHitCount:
+          type: integer
+
+    CategorizeTransactionsInput:
+      type: object
+      description: Input for categorizeTransactions Server Action
+      required:
+        - walletId
+      properties:
+        walletId:
+          type: string
+          format: uuid
+
+    CategorizeTransactionsOutput:
+      type: object
+      description: Output from categorizeTransactions Server Action
+      properties:
+        categorizedCount:
+          type: integer
+        failedCount:
+          type: integer
+          description: Transactions that failed AI classification
