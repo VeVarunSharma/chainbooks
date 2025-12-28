@@ -6,7 +6,7 @@ import {
   isValidEthAddress,
   normalizeAddress,
 } from "@/lib/utils/address-validation";
-import { quicknodeService } from "../services/quicknode";
+import { quicknodeService } from "../services/etherscan";
 import type { ActionResult } from "../types";
 
 interface AuditResult {
