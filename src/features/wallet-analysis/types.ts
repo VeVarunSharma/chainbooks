@@ -1,10 +1,10 @@
 import type { TransactionTypeValue } from "@/lib/db/schema";
 
 // ============================================================================
-// QUICKNODE API TYPES
+// ETHERSCAN API TYPES
 // ============================================================================
 
-export interface QuicknodeTransaction {
+export interface EtherscanTransaction {
   hash: string;
   blockNumber: string;
   timeStamp: string;
@@ -19,7 +19,7 @@ export interface QuicknodeTransaction {
   isError: string;
 }
 
-export interface QuicknodeTokenTransfer {
+export interface EtherscanTokenTransfer {
   hash: string;
   blockNumber: string;
   timeStamp: string;
@@ -32,7 +32,7 @@ export interface QuicknodeTokenTransfer {
   contractAddress: string;
 }
 
-export interface QuicknodeResponse<T> {
+export interface EtherscanResponse<T> {
   status: string;
   message: string;
   result: T[];

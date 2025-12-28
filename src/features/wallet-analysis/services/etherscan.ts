@@ -1,8 +1,8 @@
 import { env } from "@/lib/config/env";
 import type {
-  QuicknodeTransaction,
-  QuicknodeTokenTransfer,
-  QuicknodeResponse,
+  EtherscanTransaction,
+  EtherscanTokenTransfer,
+  EtherscanResponse,
 } from "../types";
 
 const ETHERSCAN_API_BASE = "https://api.etherscan.io/api";
@@ -58,7 +58,7 @@ class EtherscanService {
     startBlock = 0,
     endBlock = 99999999,
     limit = 100
-  ): Promise<QuicknodeTransaction[]> {
+  ): Promise<EtherscanTransaction[]> {
     return this.queueRequest(async () => {
       const params = new URLSearchParams({
         module: "account",
@@ -82,12 +82,13 @@ class EtherscanService {
         throw new Error(`Etherscan API error: ${response.status}`);
       }
 
-      const data: QuicknodeResponse<QuicknodeTransaction> =
+      const data: EtherscanResponse<EtherscanTransaction> =
         await response.json();
 
       if (data.status === "0" && data.message !== "No transactions found") {
         // Include the result field which contains the actual error details
-        const errorDetails = typeof data.result === "string" ? data.result : data.message;
+        const errorDetails =
+          typeof data.result === "string" ? data.result : data.message;
         throw new Error(`Etherscan API error: ${errorDetails}`);
       }
 
@@ -103,7 +104,7 @@ class EtherscanService {
     startBlock = 0,
     endBlock = 99999999,
     limit = 100
-  ): Promise<QuicknodeTokenTransfer[]> {
+  ): Promise<EtherscanTokenTransfer[]> {
     return this.queueRequest(async () => {
       const params = new URLSearchParams({
         module: "account",
@@ -127,12 +128,13 @@ class EtherscanService {
         throw new Error(`Etherscan API error: ${response.status}`);
       }
 
-      const data: QuicknodeResponse<QuicknodeTokenTransfer> =
+      const data: EtherscanResponse<EtherscanTokenTransfer> =
         await response.json();
 
       if (data.status === "0" && data.message !== "No transactions found") {
         // Include the result field which contains the actual error details
-        const errorDetails = typeof data.result === "string" ? data.result : data.message;
+        const errorDetails =
+          typeof data.result === "string" ? data.result : data.message;
         throw new Error(`Etherscan API error: ${errorDetails}`);
       }
 
@@ -147,8 +149,8 @@ class EtherscanService {
     address: string,
     limit = 100
   ): Promise<{
-    transactions: QuicknodeTransaction[];
-    tokenTransfers: QuicknodeTokenTransfer[];
+    transactions: EtherscanTransaction[];
+    tokenTransfers: EtherscanTokenTransfer[];
   }> {
     const [transactions, tokenTransfers] = await Promise.all([
       this.getTransactions(address, 0, 99999999, limit),
@@ -159,8 +161,8 @@ class EtherscanService {
   }
 }
 
-// Export singleton instance (keeping name for backward compatibility)
-export const quicknodeService = new EtherscanService();
+// Export singleton instance
+export const etherscanService = new EtherscanService();
 
 // Export types
-export type { QuicknodeTransaction, QuicknodeTokenTransfer };
+export type { EtherscanTransaction, EtherscanTokenTransfer };

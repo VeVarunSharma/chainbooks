@@ -6,7 +6,7 @@ import {
   isValidEthAddress,
   normalizeAddress,
 } from "@/lib/utils/address-validation";
-import { quicknodeService } from "../services/etherscan";
+import { etherscanService } from "../services/etherscan";
 import type { ActionResult } from "../types";
 
 interface AuditResult {
@@ -18,7 +18,7 @@ interface AuditResult {
 
 /**
  * Agent 1: The Auditor
- * Fetches and stores raw transactions from Quicknode/Etherscan API
+ * Fetches and stores raw transactions from Etherscan API
  */
 export async function auditWallet(
   address: string
@@ -65,9 +65,9 @@ export async function auditWallet(
       walletId = newWallet[0].id;
     }
 
-    // 3. Fetch transactions from Quicknode
+    // 3. Fetch transactions from Etherscan
     const { transactions: ethTxs, tokenTransfers } =
-      await quicknodeService.getAllTransactions(normalizedAddress, 100);
+      await etherscanService.getAllTransactions(normalizedAddress, 100);
 
     // 4. Map raw data to Transaction schema
     const newTransactions: NewTransaction[] = [];
