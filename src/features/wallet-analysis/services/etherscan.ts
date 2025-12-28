@@ -5,24 +5,20 @@ import type {
   QuicknodeResponse,
 } from "../types";
 
-// Etherscan API V2 base URL (unified multichain API)
-const ETHERSCAN_API_BASE = "https://api.etherscan.io/v2/api";
-const ETHEREUM_CHAIN_ID = "1"; // Ethereum mainnet
+const ETHERSCAN_API_BASE = "https://api.etherscan.io/api";
 
 /**
- * Etherscan API V2 client for fetching Ethereum transactions
+ * Etherscan API client for fetching Ethereum transactions
  */
 class EtherscanService {
   private apiUrl: string;
   private apiKey: string;
-  private chainId: string;
   private requestQueue: Promise<unknown> = Promise.resolve();
   private lastRequestTime = 0;
   private minRequestInterval = 200; // 200ms between requests (5 req/sec)
 
   constructor() {
     this.apiUrl = ETHERSCAN_API_BASE;
-    this.chainId = ETHEREUM_CHAIN_ID;
     // Etherscan allows requests without API key (rate limited to 1/5sec)
     // With free API key, you get 5 calls/sec
     this.apiKey = env.ETHERSCAN_API_KEY || "";
@@ -65,7 +61,6 @@ class EtherscanService {
   ): Promise<QuicknodeTransaction[]> {
     return this.queueRequest(async () => {
       const params = new URLSearchParams({
-        chainid: this.chainId,
         module: "account",
         action: "txlist",
         address,
@@ -74,8 +69,12 @@ class EtherscanService {
         page: "1",
         offset: limit.toString(),
         sort: "desc",
-        apikey: this.apiKey,
       });
+
+      // Add API key if available (increases rate limit)
+      if (this.apiKey) {
+        params.append("apikey", this.apiKey);
+      }
 
       const response = await fetch(`${this.apiUrl}?${params}`);
 
@@ -88,8 +87,7 @@ class EtherscanService {
 
       if (data.status === "0" && data.message !== "No transactions found") {
         // Include the result field which contains the actual error details
-        const errorDetails =
-          typeof data.result === "string" ? data.result : data.message;
+        const errorDetails = typeof data.result === "string" ? data.result : data.message;
         throw new Error(`Etherscan API error: ${errorDetails}`);
       }
 
@@ -108,7 +106,6 @@ class EtherscanService {
   ): Promise<QuicknodeTokenTransfer[]> {
     return this.queueRequest(async () => {
       const params = new URLSearchParams({
-        chainid: this.chainId,
         module: "account",
         action: "tokentx",
         address,
@@ -117,8 +114,12 @@ class EtherscanService {
         page: "1",
         offset: limit.toString(),
         sort: "desc",
-        apikey: this.apiKey,
       });
+
+      // Add API key if available (increases rate limit)
+      if (this.apiKey) {
+        params.append("apikey", this.apiKey);
+      }
 
       const response = await fetch(`${this.apiUrl}?${params}`);
 
@@ -131,8 +132,7 @@ class EtherscanService {
 
       if (data.status === "0" && data.message !== "No transactions found") {
         // Include the result field which contains the actual error details
-        const errorDetails =
-          typeof data.result === "string" ? data.result : data.message;
+        const errorDetails = typeof data.result === "string" ? data.result : data.message;
         throw new Error(`Etherscan API error: ${errorDetails}`);
       }
 

@@ -3,7 +3,7 @@ import { z } from "zod";
 // Environment variable validation
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
-  QUICKNODE_API_URL: z.string().url(),
+  ETHERSCAN_API_KEY: z.string().optional(),
   COINGECKO_API_KEY: z.string().optional(),
   AZURE_AI_ENDPOINT: z.string().url(),
   AZURE_AI_API_KEY: z.string().min(1),
@@ -23,7 +23,7 @@ function getEnv() {
     // Return partial config for development
     return {
       DATABASE_URL: process.env.DATABASE_URL || "",
-      QUICKNODE_API_URL: process.env.QUICKNODE_API_URL || "",
+      ETHERSCAN_API_KEY: process.env.ETHERSCAN_API_KEY || "",
       COINGECKO_API_KEY: process.env.COINGECKO_API_KEY || "",
       AZURE_AI_ENDPOINT: process.env.AZURE_AI_ENDPOINT || "",
       AZURE_AI_API_KEY: process.env.AZURE_AI_API_KEY || "",
